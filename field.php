@@ -1,13 +1,18 @@
 <?php
+require_once('validator.php');
+
 abstract class BaseField {
-    protected $name;
+    public $name;
     public $data;
+    public $error;
     protected $validators;
     protected $input=array();
+    protected $form;
 
-    public function __construct($name, $validators) {
+    public function __construct($name, $validators, $form) {
         $this->name = $name;
         $this->validators = $validators;
+        $this->form = $form;
         $this->input['name'] = $this->name;
         $this->input['id'] = $this->name;
     }
@@ -34,7 +39,18 @@ abstract class BaseField {
 
     //根据$this->validators 列表验证该字段
     public function validate_data() {
-
+        foreach ($this->validators as $value) {
+            if (empty($value)) {
+                throw new Exception("undefine validator");
+            }
+            $validator = new $value['type']($value['args']);
+            if ($validator->run($this->form, $this)) {
+                continue;
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
@@ -46,4 +62,7 @@ class TextField extends BaseField {
 class PasswordField extends BaseField {
     protected $input = array('type'=> 'password');
 
+}
+class SubmitField extends BaseField {
+    protected $input = array('type'=> 'submit');
 }
